@@ -1,0 +1,56 @@
+name: Scheduled Update
+
+on:
+  schedule:
+    - cron: "0 5 * * *"
+  workflow_dispatch: # Allows manual trigger for testing
+
+jobs:
+  update-flake:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v27
+        with:
+          nix_path: nixpkgs=channel:nixos-unstable
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Check for New Release
+        id: check_release
+        run: |
+          OWNER="pseudoregalia-modding"
+          REPO="rando"
+          CURRENT_VERSION=$(jq -r '.rando.version' pkgs/sources.json)
+          LATEST_TAG=$(curl -s "https://api.github.com/repos/$OWNER/$REPO/releases/latest" | jq -r .tag_name)
+
+          echo "Current: $CURRENT_VERSION"
+          echo "Latest: $LATEST_TAG"
+
+          if [ "$CURRENT_VERSION" != "$LATEST_TAG" ]; then
+            echo "new_release=true" >> $GITHUB_OUTPUT
+          else
+            echo "new_release=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Run Update Script
+        if: steps.check_release.outputs.new_release == 'true'
+        run: |
+          cd pkgs
+          # We run inside nix-shell to ensure python/toml/jq are available
+          nix-shell -p python3 python3Packages.toml jq curl cargo --run "bash update.sh"
+
+      - name: Update Flake Inputs
+        run: nix flake update
+
+      - name: Commit and Push Changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: automated update of rando sources and flake.lock"
+          file_pattern: "pkgs/sources.json pkgs/Cargo.lock flake.lock"
