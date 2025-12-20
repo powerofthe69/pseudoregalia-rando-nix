@@ -52,7 +52,14 @@ let
 
   # Map all Git dependencies and hashes from Cargo.lock
   gitDeps = lib.filterAttrs (n: v: n != "rando" && n != "oodleLib") sources;
-  crateHashes = lib.mapAttrs' (n: v: lib.nameValuePair "${v.repo}-${v.version}" v.hash) gitDeps;
+  crateHashes = lib.mapAttrs' (
+    n: v:
+    let
+      shortRev = builtins.substring 0 7 v.rev;
+      urlKey = "git+${v.url}?rev=${shortRev}#${v.rev}";
+    in
+    lib.nameValuePair urlKey v.hash
+  ) gitDeps;
 
   desktopItem = pkgs.makeDesktopItem {
     name = "pseudoregalia-rando";

@@ -97,7 +97,9 @@ for name in $(echo "$GIT_DEPS_JSON" | jq -r 'keys[]'); do
         --arg name "$name" \
         --arg ver "$_VER" \
         --arg hash "$_SRI" \
-        '{repo: $name, version: $ver, hash: $hash}')
+        --arg url "$_URL" \
+        --arg rev "$_REV" \
+        '{repo: $name, version: $ver, hash: $hash, url: $url, rev: $rev}')
 
     HASHED_DEPS=$(echo "$HASHED_DEPS" | jq --arg name "$name" --argjson obj "$JSON_STRING" '. + {($name): $obj}')
 done
