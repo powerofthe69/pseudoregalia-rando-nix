@@ -39,6 +39,9 @@ jobs:
             echo "new_release=false" >> $GITHUB_OUTPUT
           fi
 
+      - name: Update Flake Inputs
+        run: nix flake update
+
       - name: Run Update Script
         if: steps.check_release.outputs.new_release == 'true'
         run: |
@@ -46,8 +49,11 @@ jobs:
           # We run inside nix-shell to ensure python/toml/jq are available
           nix-shell -p python3 python3Packages.toml jq curl cargo --run "bash update.sh"
 
-      - name: Update Flake Inputs
-        run: nix flake update
+      - name: Validate that flake builds after updating # best practice
+        run: nix build .
+
+      - name: Validate overlay output
+        run: nix flake check
 
       - name: Commit and Push Changes
         uses: stefanzweifel/git-auto-commit-action@v5
