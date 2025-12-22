@@ -110,8 +110,8 @@ craneLib.buildPackage (
         --set-rpath "${pkgs.lib.makeLibraryPath runtimeDeps}:$out/lib" \
         $out/bin/pseudoregalia-rando
 
-      mkdir -p $out/share/pixmaps
-      cp ${./sybil.jpeg} $out/share/pixmaps/sybil.jpeg
+      mkdir -p $out/share/hicolor/512x512/apps
+      cp ${./sybil.png} $out/share/hicolor/512x512/apps/sybil.png
 
       mkdir -p $out/share/pseudoregalia-rando
       cp $out/bin/pseudoregalia-rando $out/share/pseudoregalia-rando/pseudoregalia-rando-bin
